@@ -70,7 +70,7 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
     cursor = conn.cursor()
 
     try:
-        create_user_body = UserCreateRequest.model_validate(req.get_json())
+        create_user_body = UserCreateRequest(**req.get_json())
     except Exception as e:
         logging.error("Could not parse user creation request: " + str(e))
 
