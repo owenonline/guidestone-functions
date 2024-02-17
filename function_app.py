@@ -10,6 +10,10 @@ from langchain_openai import AzureChatOpenAI
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from operator import itemgetter
+
+import requests
+from structured_models import GradeLevel, UserCreateRequest, clean_text, GraphExpandRequest, LeafTopic, TopicDependencies, LessonCreateRequest
+from structured_models import STARTING_KNOWLEDGE, TokenExchangeRequest
 import re
 import json
 
@@ -39,34 +43,16 @@ def healthcheck(req: func.HttpRequest) -> func.HttpResponse:
 
 # """MARKS ENDPOINTS ARE BELOW THIS LINE"""
 
-class GradeLevel(Enum):
-    KINDERGARTEN = "K"
-    FIRST_GRADE = "1"
-    SECOND_GRADE = "2"
-    THIRD_GRADE = "3"
-    FOURTH_GRADE = "4"
-    FIFTH_GRADE = "5"
-    SIXTH_GRADE = "6"
-    SEVENTH_GRADE = "7"
-    EIGHTH_GRADE = "8"
-    NINTH_GRADE = "9"
-    TENTH_GRADE = "10"
-    ELEVENTH_GRADE = "11"
-    TWELFTH_GRADE = "12"
-    COLLEGE = "College"
-
-class UserCreateRequest(BaseModel):
-    name: str = Field(description="The name of the user")
-    email: str = Field(description="The email of the user")
-    profile_pic_url: str = Field(description="The profile picture of the user")
-    grade_level: GradeLevel = Field(description="The grade level of the user")
-    interests: list[str] = Field(description="The interests of the user")
-
 @app.function_name("createUser")
-@app.route(route="createuser",
+@app.route(route="createUser",
            auth_level=func.AuthLevel.ANONYMOUS, 
            methods=['POST'])
 def createUser(req: func.HttpRequest) -> func.HttpResponse:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+    
     postgreSQL_pool = pool.SimpleConnectionPool(1, int(os.getenv("PYTHON_THREADPOOL_THREAD_COUNT")), os.getenv("POSTGRES_CONN_STRING"))  
     conn = postgreSQL_pool.getconn()
     cursor = conn.cursor()
@@ -76,6 +62,7 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error("Could not parse user creation request: " + str(e))
 
+    # add user to postgres
     try:
         name = create_user_body.name
         email = create_user_body.email
@@ -85,10 +72,10 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
 
         insert_sql = """
         INSERT INTO userData (name, email, profile_picture_url, grade_level, interests)
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id;
         """
         cursor.execute(insert_sql, (name, email, profile_pic_url, grade_level, interests))
-
+        user_id = cursor.fetchone()[0]
         conn.commit()
 
     except Exception as e:
@@ -100,12 +87,73 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
             status_code=500
         )
 
+    # create starting graph for user in gremlin
+    snc = graph_client.submit(f"g.addV('start_node').property('user_id','{user_id}').property('pk','pk')")
+    snc.all().result()
+
+    subjects = ["Math", "Physics", "Chemistry", "Biology", "Computer Science"]
+
+    for subject in subjects:
+        insert_sql = """
+        INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id;
+        """
+        cursor.execute(insert_sql, (STARTING_KNOWLEDGE[create_user_body.grade_level][subject], [], json.dumps({}), "", subject))
+        base_id = cursor.fetchone()[0]
+        conn.commit()
+
+        subject_l = subject.lower()
+        sc = graph_client.submit(f"g.addV('{subject_l}_base_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('pk','pk')")
+        sc.all().result()
+
+        cc = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{user_id}').addE('base').to(g.V().hasLabel('{subject_l}_base_node').has('user_id', '{user_id}'))")
+        cc.all().result()
+
     postgreSQL_pool.putconn(conn)
     postgreSQL_pool.closeall()
 
     return func.HttpResponse(
         status_code=200
     )
+
+@app.function_name("exchangeToken")
+@app.route(route="exchangeToken",
+           auth_level=func.AuthLevel.ANONYMOUS, 
+           methods=['POST'])
+def exchangeToken(req: func.HttpRequest) -> func.HttpResponse:
+    try:
+        req_json = TokenExchangeRequest(**req.get_json())
+    except:
+        logging.error("Could not parse user creation request: " + str(e))
+
+    token_endpoint = 'https://oauth2.googleapis.com/token'
+    payload = {
+        'code': req_json.code,
+        'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+        'client_secret': os.getenv("GOOGLE_CLIENT_SECRET"),
+        'redirect_uri': req_json.redirect_uri,
+        'grant_type': 'authorization_code',
+    }
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+
+    try:
+        response = requests.post(token_endpoint, data=payload, headers=headers)
+        response.raise_for_status()
+        return func.HttpResponse(
+            status_code=200,
+            body=response.json()
+        )
+    except requests.exceptions.HTTPError as e:
+        return func.HttpResponse(
+            status_code=500,
+            body={
+                'error': str(e), 
+                'description': 'Failed to exchange code for token'
+            }
+        )
+        return 
 
 @app.function_name("getGraphStructure")
 @app.route(route="getGraphStructure",
@@ -160,23 +208,6 @@ def getNodeDetails(req: func.HttpRequest) -> func.HttpResponse:
     )
 
 # """MY ENDPOINTS ARE BELOW THIS LINE"""
-
-# makes text safe for insertion into gremlin graph
-def clean_text(text: str) -> str:
-    if text is None:
-        return None
-    return re.sub(r'\\\n *\\', '', text).replace("'", "").replace('"', '').replace("/","").replace(" ","_").strip().lower()
-
-class GraphExpandRequest(BaseModel):
-    topic: str = Field(description="The topic to expand the graph on")
-
-class LeafTopic(BaseModel):
-    id: str = Field(description="the id of the node in the graph")
-    topic: str = Field(description="the natural language and very brief description of what the topic is")
-
-class TopicDependencies(BaseModel):
-    dependencies: list[str] = Field(description="Topics that the user must already understand to understand the current topic. For example, to understand the topic 'fractions', the user must already understand the topic 'division'. Generate a full list of all of the topics IMMEDIATELY PRECEDING the current topic. For example, if the current topic is 'derivatives' you should include 'limits' in this list but NOT 'multiplication' since it is not a direct prerequisite for understanding derivatives.")
-
 @app.function_name("expandGraph")
 @app.route(route="expandGraph",
            auth_level=func.AuthLevel.ANONYMOUS, 
@@ -301,3 +332,31 @@ def expandGraph(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(
         status_code=200
     )
+
+@app.function_name("createLesson")
+@app.queue_trigger(arg_name='queuemessage', 
+                  queue_name='actions',
+                  connection="AzureWebJobsStorage")
+def createLesson(queuemessage: func.QueueMessage, context) -> None:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+    
+    postgreSQL_pool = pool.SimpleConnectionPool(1, int(os.getenv("PYTHON_THREADPOOL_THREAD_COUNT")), os.getenv("POSTGRES_CONN_STRING"))  
+    conn = postgreSQL_pool.getconn()
+    cursor = conn.cursor()
+    
+    try:
+        data = LessonCreateRequest(**queuemessage.get_json()) # all the data in here is verified to be valid and will not cause errors
+    except ValidationError as e:
+        logging.exception(e)
+        logging.error(f"Invalid queue message: {queuemessage.get_json()}")
+        return
+    except ValueError as e:
+        logging.error(f"Queue message is not valid: {queuemessage.get_body().decode('utf-8')}")
+        return
+    
+    # get the records in the learning style database
+    # TODO: Implement learning style database
+
