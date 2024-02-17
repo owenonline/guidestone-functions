@@ -10,8 +10,8 @@ from langchain_openai import AzureChatOpenAI
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from operator import itemgetter
-import copy
 import re
+import json
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -36,6 +36,8 @@ def healthcheck(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(
         status_code=200
     )
+
+# """MARKS ENDPOINTS ARE BELOW THIS LINE"""
 
 class GradeLevel(Enum):
     KINDERGARTEN = "K"
@@ -105,11 +107,65 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
         status_code=200
     )
 
+@app.function_name("getGraphStructure")
+@app.route(route="getGraphStructure",
+           auth_level=func.AuthLevel.ANONYMOUS, 
+           methods=['GET'])
+def getGraphStructure(req: func.HttpRequest) -> func.HttpResponse:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+
+    # get current graph nodes
+    node_id_callback = graph_client.submit("g.V().values('id').fold()")
+    node_id_results = node_id_callback.all().result()[0]
+    edges = []
+    for node_id in node_id_results:
+        edge_callback = graph_client.submit(f"g.V('{node_id}').outE().inV().values('id').fold()")
+        edge_results = edge_callback.all().result()[0]
+        edges.extend([(node_id, edge) for edge in edge_results])
+
+    return func.HttpResponse(
+        status_code=200,
+        body=json.dumps({
+            "nodes": node_id_results,
+            "edges": edges
+        })
+    )
+
+@app.function_name("getNodeDetails")
+@app.route(route="getNodeDetails",
+           auth_level=func.AuthLevel.ANONYMOUS, 
+           methods=['POST'])
+def getNodeDetails(req: func.HttpRequest) -> func.HttpResponse:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+
+    try:
+        node_details_body = req.get_json()
+    except Exception as e:
+        logging.error("Could not parse node details request: " + str(e))
+
+    node_id = node_details_body['node_id']
+
+    node_details_callback = graph_client.submit(f"g.V('{node_id}').valueMap().fold()")
+    node_details_result = node_details_callback.all().result()[0][0]
+
+    return func.HttpResponse(
+        status_code=200,
+        body=json.dumps(node_details_result)
+    )
+
+# """MY ENDPOINTS ARE BELOW THIS LINE"""
+
 # makes text safe for insertion into gremlin graph
 def clean_text(text: str) -> str:
     if text is None:
         return None
-    return re.sub(r'\\\n *\\', '', text).replace("'", "").replace('"', '').replace("/","").replace(" ","").strip().lower()
+    return re.sub(r'\\\n *\\', '', text).replace("'", "").replace('"', '').replace("/","").replace(" ","_").strip().lower()
 
 class GraphExpandRequest(BaseModel):
     topic: str = Field(description="The topic to expand the graph on")
