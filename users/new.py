@@ -5,6 +5,7 @@ from psycopg2 import pool
 from pydantic import BaseModel, Field
 from enum import Enum
 import json
+from stemtopics import Topics
 
 class GradeLevel(Enum):
     KINDERGARTEN = "K"
@@ -25,138 +26,143 @@ class GradeLevel(Enum):
     JUNIOR = "J"
     SENIOR = "SR"
 
-STARTING_KNOWLEDGE = {
+STARTING_KNOWLEDGE: dict[GradeLevel, Topics] = {
     GradeLevel.KINDERGARTEN: {
-        "Math": "Counting to 100, basic shapes, simple addition and subtraction.",
-        "Biology": "Identifying basic body parts and familiar plants and animals.",
-        "Physics": "Exploring motion, pushing and pulling.",
-        "Chemistry": "Introduction to states of matter: solid, liquid, gas.",
-        "Computer Science": "Understanding how to use a computer or tablet."
+        Topics.COUNTING,
+        Topics.BASIC_SHAPES,
+        Topics.ADDITION,
+        Topics.SUBTRACTION,
+        Topics.COMPUTER_BASICS,
     },
     GradeLevel.FIRST_GRADE: {
-        "Math": "Understanding numbers up to 120, exploring more complex addition and subtraction, basic geometry.",
-        "Biology": "Learning about human needs, exploring plant parts and functions.",
-        "Physics": "Discovering how light and sound work, exploring simple machines.",
-        "Chemistry": "Differentiating between mixtures and solutions.",
-        "Computer Science": "Practicing typing, beginning to navigate the internet."
+        Topics.COUNTING,
+        Topics.ADDITION,
+        Topics.SUBTRACTION,
+        Topics.BASIC_GEOMETRY,
+        Topics.SIMPLE_MACHINES,
     },
     GradeLevel.SECOND_GRADE: {
-        "Math": "Introducing place value, time, and money, starting multiplication concepts.",
-        "Biology": "Studying habitats and food chains, exploring human body basics.",
-        "Physics": "Understanding forces and motion, exploring the concept of energy.",
-        "Chemistry": "Exploring how materials can change state.",
-        "Computer Science": "Using software to create documents, introducing simple coding."
+        Topics.PLACE_VALUES,
+        Topics.TIME_TELLING,
+        Topics.MONEY_MATH,
+        Topics.MULTIPLICATION,
+        Topics.BASIC_PLANT_BIOLOGY,
     },
     GradeLevel.THIRD_GRADE: {
-        "Math": "Mastering multiplication and division, understanding fractions, measuring objects.",
-        "Biology": "Exploring how plants and animals adapt, learning about ecosystems.",
-        "Physics": "Studying heat, light, and sound, exploring magnetism.",
-        "Chemistry": "Introduction to chemical reactions and conservation of mass.",
-        "Computer Science": "Developing coding skills with block-based programming, learning about internet safety."
+        Topics.MULTIPLICATION,
+        Topics.DIVISION,
+        Topics.SIMPLE_FRACTIONS,
+        Topics.MEASUREMENTS,
+        Topics.PHOTOSYNTHESIS,
     },
     GradeLevel.FOURTH_GRADE: {
-        "Math": "Solving problems with multi-digit numbers, expanding knowledge of fractions and decimals.",
-        "Biology": "Understanding food webs, studying human body systems.",
-        "Physics": "Exploring electricity, circuits, and waves.",
-        "Chemistry": "Learning about elements, compounds, and chemical changes.",
-        "Computer Science": "Navigating websites, starting digital projects."
+        Topics.DECIMALS,
+        Topics.FRACTIONS,
+        Topics.AREA_AND_PERIMETER,
+        Topics.ELECTRICITY_AND_MAGNETISM,
+        Topics.ELEMENTS_AND_PERIODIC_TABLE,
     },
     GradeLevel.FIFTH_GRADE: {
-        "Math": "Adding and subtracting fractions, understanding volume and basic geometry.",
-        "Biology": "Studying cells and human health, using the scientific method.",
-        "Physics": "Deepening knowledge of forces and motion, exploring light and optics.",
-        "Chemistry": "Exploring mixtures, solutions, and the periodic table.",
-        "Computer Science": "Practicing safe online communication."
+        Topics.VOLUME,
+        Topics.FRACTIONS,
+        Topics.MIXTURES_AND_SOLUTIONS,
+        Topics.LIGHT_AND_OPTICS,
+        Topics.CELL_STRUCTURE_AND_FUNCTION,
     },
     GradeLevel.SIXTH_GRADE: {
-        "Math": "Exploring ratios and negative numbers, beginning algebra.",
-        "Biology": "Classifying organisms, introducing genetics.",
-        "Physics": "Studying energy transfer, simple engineering concepts.",
-        "Chemistry": "Understanding chemical reactions and atomic structure.",
-        "Computer Science": "Learning drag-and-drop coding, enhancing digital literacy."
+        Topics.RATIOS,
+        Topics.NEGATIVE_NUMBERS,
+        Topics.ECOSYSTEMS_AND_BIOMES,
+        Topics.ENERGY_TYPES_AND_CONVERSION,
+        Topics.CHEMICAL_REACTIONS,
     },
     GradeLevel.SEVENTH_GRADE: {
-        "Math": "Studying proportional relationships, probability, and algebra.",
-        "Biology": "Exploring human anatomy in detail, studying ecosystems.",
-        "Physics": "Learning about thermal energy and motion.",
-        "Chemistry": "Balancing chemical equations, introducing moles.",
-        "Computer Science": "Understanding software use and installation."
+        Topics.PROBABILITY,
+        Topics.ALGEBRAIC_EXPRESSIONS,
+        Topics.HUMAN_BODY_SYSTEMS,
+        Topics.THERMODYNAMICS_IN_PHYSICS,
+        Topics.SOLUTIONS_AND_MIXTURES,
     },
     GradeLevel.EIGHTH_GRADE: {
-        "Math": "Studying linear equations, functions, and beginning geometry.",
-        "Biology": "Exploring evolution, photosynthesis, and cellular respiration.",
-        "Physics": "Learning about waves, electromagnetism, and Newton's laws.",
-        "Chemistry": "Studying atomic theory and periodic trends.",
-        "Computer Science": "Engaging in project-based coding, learning cybersecurity fundamentals."
+        Topics.LINEAR_EQUATIONS,
+        Topics.FUNCTIONS,
+        Topics.EVOLUTION_AND_NATURAL_SELECTION,
+        Topics.WAVES_AND_SOUND,
+        Topics.ATOMIC_AND_NUCLEAR_PHYSICS,
     },
     GradeLevel.NINTH_GRADE: {
-        "Math": "Diving into Algebra I, focusing on linear and quadratic equations.",
-        "Biology": "Studying genetics, biomes, and organism structures.",
-        "Physics": "Exploring motion, forces, and energy conversions.",
-        "Chemistry": "Learning about stoichiometry, chemical bonds, and matter states.",
-        "Computer Science": "Introduction to high-level programming languages."
+        Topics.QUADRATIC_EQUATIONS,
+        Topics.FUNCTIONS,
+        Topics.GENETICS,
+        Topics.CHEMICAL_BONDING,
+        Topics.MOTION_AND_FORCES,
     },
     GradeLevel.TENTH_GRADE: {
-        "Math": "Engaging with Geometry, including theorems, circle geometry, and transformations.",
-        "Biology": "Advancing in cell biology, genetics, and ecology.",
-        "Physics": "Exploring electricity, magnetism, and mechanical waves.",
-        "Chemistry": "Studying acid-base chemistry, thermodynamics.",
-        "Computer Science": "Learning object-oriented programming and data structures."
+        Topics.GEOMETRY_THEOREMS,
+        Topics.ACID_BASE_REACTIONS,
+        Topics.ELECTRICITY_AND_MAGNETISM,
+        Topics.PLANT_AND_ANIMAL_CLASSIFICATION,
+        Topics.CODING_SIMPLE_PROGRAMS,
     },
     GradeLevel.ELEVENTH_GRADE: {
-        "Math": "Delving into Algebra II with polynomial functions, logarithms, and sequences.",
-        "Biology": "Exploring evolution and plant biology in depth.",
-        "Physics": "Studying fluid mechanics, thermal physics, and nuclear concepts.",
-        "Chemistry": "Exploring kinetics and chemical equilibrium.",
-        "Computer Science": "Studying software development and databases."
+        Topics.ALGEBRAIC_EXPRESSIONS,
+        Topics.CHEMICAL_EQUILIBRIUM,
+        Topics.FLUID_DYNAMICS,
+        Topics.GENETICS_AND_MOLECULAR_BIOLOGY,
+        Topics.DATABASES_ADVANCED,
     },
     GradeLevel.TWELFTH_GRADE: {
-        "Math": "Mastering Pre-Calculus, including trigonometry, complex numbers, and limits.",
-        "Biology": "Focusing on advanced genetics and ecosystem studies.",
-        "Physics": "Exploring advanced topics like electromagnetism without calculus.",
-        "Chemistry": "Learning about electrochemistry, photochemistry, and materials science.",
-        "Computer Science": "Advancing in programming, network security."
+        Topics.CALCULUS_LIMITS,
+        Topics.ECOLOGY_CONSERVATION,
+        Topics.ELECTROCHEMISTRY,
+        Topics.QUANTUM_THEORY_BASICS,
+        Topics.NETWORKING_AND_SECURITY,
     },
     GradeLevel.FRESHMAN: {
-        "Math": "Calculus I - Limits, derivatives, integrals, and their applications.",
-        "Biology": "General Biology I - Cell structure, genetics, and basic metabolism.",
-        "Physics": "General Physics I - Mechanics, including motion, forces, and energy.",
-        "Chemistry": "General Chemistry I - Atomic structure, periodic table, stoichiometry, and chemical reactions.",
-        "Computer Science": "Introduction to Programming - Basic syntax, control structures, data types, and simple data structures in a high-level programming language."
+        Topics.DERIVATIVES,
+        Topics.CELL_BIOLOGY,
+        Topics.ORGANIC_CHEMISTRY_BASICS,
+        Topics.GENERAL_PHYSICS_I,
+        Topics.INTRODUCTION_TO_PROGRAMMING,
     },
     GradeLevel.SOPHOMORE: {
-        "Math": "Calculus II - Sequences, series, polar coordinates, and parametric equations.",
-        "Biology": "General Biology II - Evolution, ecology, plant and animal physiology.",
-        "Physics": "General Physics II - Electricity, magnetism, and thermodynamics.",
-        "Chemistry": "Organic Chemistry I - Structure, nomenclature, reactions, and mechanisms of organic molecules.",
-        "Computer Science": "Data Structures and Algorithms - Introduction to complexity analysis, basic data structures (arrays, linked lists, stacks, queues, trees, graphs), and algorithmic strategies."
+        Topics.INTEGRALS,
+        Topics.ECOLOGY,
+        Topics.ORGANIC_CHEMISTRY,
+        Topics.GENERAL_PHYSICS_II,
+        Topics.DATA_STRUCTURES_COMPLEX,
     },
-    GradeLevel.JUNIOR:  {
-        "Math": "Linear Algebra - Vector spaces, linear mappings, matrices, determinants, and eigenvalues and eigenvectors.",
-        "Biology": "Cell Biology - In-depth study of cell structure and function, signaling pathways, and cell cycle.",
-        "Physics": "Modern Physics - Introduction to quantum mechanics, atomic and nuclear physics, and special relativity.",
-        "Chemistry": "Physical Chemistry - Thermodynamics, kinetics, quantum chemistry, and spectroscopy.",
-        "Computer Science": "Software Engineering - Software development lifecycle, version control, testing, debugging, and basic software design patterns."
+    GradeLevel.JUNIOR: {
+        Topics.MULTIVARIABLE_CALCULUS,
+        Topics.MICROORGANISMS,
+        Topics.PHYSICAL_CHEMISTRY,
+        Topics.MODERN_PHYSICS,
+        Topics.SOFTWARE_ENGINEERING,
     },
     GradeLevel.SENIOR: {
-        "Math": "Differential Equations - Ordinary differential equations, systems of ODEs, and an introduction to partial differential equations.",
-        "Biology": "Genetics and Molecular Biology - Genetic information flow, gene expression, and genetic engineering techniques.",
-        "Physics": "Advanced Physics Elective - Depending on the student's interest, a course in advanced mechanics, electromagnetism, computational physics, or another area of physics.",
-        "Chemistry": "Inorganic Chemistry - Study of inorganic compounds, coordination chemistry, and organometallics.",
-        "Computer Science": "Computer Networks and Security - Basics of network protocols, network architecture, data security, encryption, and cybersecurity fundamentals."
-    }
+        Topics.DIFFERENTIAL_EQUATIONS,
+        Topics.GENETICS_AND_MOLECULAR_BIOLOGY,
+        Topics.INORGANIC_CHEMISTRY,
+        Topics.ADVANCED_PHYSICS_ELECTIVE,
+        Topics.COMPUTER_NETWORKS_AND_SECURITY,
+    },
 }
 
-def get_starting_knowledge(grade_level: GradeLevel, topic) -> dict[str, str]:
+def get_starting_knowledge(grade_level: GradeLevel) -> list[str]:
     # for every grade level below or equal to current grade level
     # get the starting knowledge for the topic
 
     starting_knowledge = []
     for gl in GradeLevel:
         if gl.value <= grade_level.value:
-            starting_knowledge.append(STARTING_KNOWLEDGE[gl][topic])
+            try:
+                vals = [x.value for x in STARTING_KNOWLEDGE[gl]]
+                starting_knowledge.extend(vals)
+            except Exception:
+                logging.info(STARTING_KNOWLEDGE[gl])
+                pass
 
-    return " and ".join(starting_knowledge)
+    return starting_knowledge
 
 class UserCreateRequest(BaseModel):
     name: str = Field(description="The name of the user")
@@ -187,12 +193,13 @@ def create_new_user(req_json: dict) -> int:
         profile_pic_url = create_user_body.profile_pic_url
         grade_level = create_user_body.grade_level.value
         interests = create_user_body.interests
+        base_knowledge = get_starting_knowledge(create_user_body.grade_level)
 
         insert_sql = """
-        INSERT INTO userData (name, email, profile_picture_url, grade_level, interests)
-        VALUES (%s, %s, %s, %s, %s) RETURNING id;
+        INSERT INTO userData (name, email, profile_picture_url, grade_level, interests, base_knowledge)
+        VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;
         """
-        cursor.execute(insert_sql, (name, email, profile_pic_url, grade_level, interests))
+        cursor.execute(insert_sql, (name, email, profile_pic_url, grade_level, interests, base_knowledge))
         user_id = cursor.fetchone()[0]
         conn.commit()
 
@@ -207,29 +214,29 @@ def create_new_user(req_json: dict) -> int:
     INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
     VALUES (%s, %s, %s, %s, %s) RETURNING id;
     """
-    cursor.execute(insert_sql, ("No topic; this is a root node", [], json.dumps({}), "", "You"))
+    cursor.execute(insert_sql, (Topics.HUMAN_INTUITION, [], json.dumps({}), "", "You"))
     base_id = cursor.fetchone()[0]
     conn.commit()
     snc = graph_client.submit(f"g.addV('start_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('status','complete').property('pk','pk')")
     snc.all().result()
 
-    subjects = ["Math", "Physics", "Chemistry", "Biology", "Computer Science"]
+    # subjects = ["Math", "Physics", "Chemistry", "Biology", "Computer Science"]
 
-    for subject in subjects:
-        insert_sql = """
-        INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
-        VALUES (%s, %s, %s, %s, %s) RETURNING id;
-        """
-        cursor.execute(insert_sql, (get_starting_knowledge(create_user_body.grade_level, subject), [], json.dumps({}), "", subject))
-        base_id = cursor.fetchone()[0]
-        conn.commit()
+    # for subject in subjects:
+    #     insert_sql = """
+    #     INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
+    #     VALUES (%s, %s, %s, %s, %s) RETURNING id;
+    #     """
+    #     cursor.execute(insert_sql, (get_starting_knowledge(create_user_body.grade_level, subject), [], json.dumps({}), "", subject))
+    #     base_id = cursor.fetchone()[0]
+    #     conn.commit()
 
-        subject_l = subject.lower()
-        sc = graph_client.submit(f"g.addV('{subject_l}_base_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('status','complete').property('pk','pk')")
-        sc.all().result()
+    #     subject_l = subject.lower()
+    #     sc = graph_client.submit(f"g.addV('{subject_l}_base_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('status','complete').property('pk','pk')")
+    #     sc.all().result()
 
-        cc = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{user_id}').addE('base').to(g.V().hasLabel('{subject_l}_base_node').has('user_id', '{user_id}'))")
-        cc.all().result()
+    #     cc = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{user_id}').addE('base').to(g.V().hasLabel('{subject_l}_base_node').has('user_id', '{user_id}'))")
+    #     cc.all().result()
 
     postgreSQL_pool.putconn(conn)
     postgreSQL_pool.closeall()

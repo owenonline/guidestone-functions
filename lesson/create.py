@@ -16,6 +16,8 @@ from lesson.audio import create_audio
 import re
 import json
 import uuid
+from moviepy.editor import VideoFileClip, concatenate_videoclips, AudioFileClip
+from azure.storage.blob import BlobServiceClient
 
 class LessonCreateRequest(BaseModel):
     node_id: str = Field(description="The id of the node in the graph that needs a new lesson")
@@ -124,18 +126,11 @@ def create_lesson(req_json: dict) -> None:
         for future in as_completed(futures):
             future.result()
 
-    for i in range(len(lesson_plan.scenes)):
-        video_generator.combine_audio_video(f"scenes/voiceover_{i}.mp3", f"scenes/animation_{i}.mp4", f"scenes/lesson_{i}.mp4")
-
-    video_generator.combine_videos([f"scenes/lesson_{i}.mp4" for i in range(len(lesson_plan.scenes))], "lesson.mp4")
-
-    # save the lesson to the cloud
-    blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AzureWebJobsStorage"))
-    container_client = blob_service_client.get_container_client("lessons")
     blobname = str(uuid.uuid4())
-    blob_client = container_client.get_blob_client(f"{blobname}.mp4")
-    with open("lesson.mp4", "rb") as ldata:
-        blob_client.upload_blob(ldata)
+    videos = [f"scenes/animation_{i}.mp4" for i in range(len(lesson_plan.scenes))]
+    audios = [f"scenes/voiceover_{i}.mp3" for i in range(len(lesson_plan.scenes))]
+
+    combine_audio_video_and_upload(videos, audios, f"{blobname}.mp4")
 
     quiz = {}
     for question, choices, correct_index in lesson_plan.quiz:
@@ -162,8 +157,28 @@ def create_lesson(req_json: dict) -> None:
     cursor.execute("UPDATE nodes SET lesson_ids = %s WHERE id = %s", (lesson_ids, table_id))
     conn.commit()
 
+def combine_audio_video_and_upload(video_files, audio_files, output_filename):
+    combined_clips = []
+
+    # Combine each video with its corresponding audio
+    for video_path, audio_path in zip(video_files, audio_files):
+        video = VideoFileClip(video_path)
+        audio = AudioFileClip(audio_path)
+        # Set the audio of the video clip
+        video = video.set_audio(audio)
+        combined_clips.append(video)
+
+    # Concatenate the combined clips into one video
+    final_clip = concatenate_videoclips(combined_clips)
+    final_clip_path = f"/tmp/{output_filename}"
+    final_clip.write_videofile(final_clip_path, codec="libx264")
+
+    # Upload the final video to Azure Blob Storage
+    blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AzureWebJobsStorage"))
+    blob_client = blob_service_client.get_blob_client(container="videos", blob=output_filename)
     
+    with open(final_clip_path, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
 
-
-
+    print(f"Uploaded {output_filename} to Azure Blob Storage.")
     

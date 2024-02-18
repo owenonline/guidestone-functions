@@ -32,8 +32,8 @@ def get_graph_structure(req_json: dict) -> dict[str, any]:
     node_id_callback = graph_client.submit(f"g.V().has('user_id', '{get_graph_body.user_id}').values('id', 'table_id').fold()")
     node_table_ids = node_id_callback.all().result()[0]
 
-    base_ids_callback = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{get_graph_body.user_id}').out().values('id').fold()")
-    base_ids = base_ids_callback.all().result()[0]
+    # base_ids_callback = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{get_graph_body.user_id}').out().values('id').fold()")
+    # base_ids = base_ids_callback.all().result()[0]
 
     edges = []
     nodes = []
@@ -54,7 +54,7 @@ def get_graph_structure(req_json: dict) -> dict[str, any]:
 
     return {
         "nodes": nodes,
-        "bases": base_ids,
+        # "bases": base_ids,
         "edges": edges,
         "names": node_names
     }

@@ -6,6 +6,8 @@ import os
 import logging
 from psycopg2 import pool
 import json
+from grader.grade import score_user
+from grader.metrics import calculate_attention
 from graph.api import get_graph_structure, get_node_details
 from graph.expand import expand_graph
 from graph.traverse import traverse_graph
@@ -98,7 +100,7 @@ def expandGraph(req: func.HttpRequest, queue: func.Out[str]) -> func.HttpRespons
     req_json: dict = req.get_json()
     expand_graph(req_json)
 
-    queue.set(req_json['user_id'])
+    # queue.set(req_json['user_id'])
     
     return func.HttpResponse(
         status_code=200
@@ -111,10 +113,67 @@ def expandGraph(req: func.HttpRequest, queue: func.Out[str]) -> func.HttpRespons
 def traverseGraph(queuein: func.QueueMessage, context) -> None:
     traverse_graph(queuein.get_body().decode("utf-8"))
     
-# @app.function_name("createLesson")
-# @app.queue_trigger(arg_name='queuemessage', 
-#                   queue_name='lesson-regenerate',
-#                   connection="AzureWebJobsStorage")
-# def createLesson(queuemessage: func.QueueMessage, context) -> None:
-#     create_lesson(queuemessage.get_json())
+@app.function_name("createLesson")
+@app.queue_trigger(arg_name='queuemessage', 
+                  queue_name='lesson-regenerate',
+                  connection="AzureWebJobsStorage")
+def createLesson(queuemessage: func.QueueMessage, context) -> None:
+    create_lesson(queuemessage.get_json())
 
+@app.function_name("lessonDone")
+@app.route(route="lessonDone",
+           auth_level=func.AuthLevel.ANONYMOUS, 
+           methods=['POST'])
+@app.queue_output(arg_name='queue', 
+                  queue_name='quiz-taken',
+                  connection="AzureWebJobsStorage")
+def lessonDone(req: func.HttpRequest, queue: func.Out[str]) -> func.HttpResponse:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+    
+    postgreSQL_pool = pool.SimpleConnectionPool(1, int(os.getenv("PYTHON_THREADPOOL_THREAD_COUNT")), os.getenv("POSTGRES_CONN_STRING"))  
+    conn = postgreSQL_pool.getconn()
+    cursor = conn.cursor()
+
+    req_json = req.get_json()
+
+    attention_score = calculate_attention(req_json['vision_points'], req_json['node_id'])
+    
+    queue.set(json.dumps({"user_id": req_json['user_id'], "node_id": req_json['node_id'], "attention_score": attention_score, "quiz_data": req_json["quiz_data"]}))
+
+    # mark node status as grading
+    graph_client.submit(f"g.V('{req_json['node_id']}').property('status', 'scoring')")
+
+    return func.HttpResponse(
+        status_code=200
+    )
+
+@app.function_name("gradeQuiz")
+@app.queue_trigger(arg_name='queuein', 
+                  queue_name='quiz-taken',
+                  connection="AzureWebJobsStorage")
+@app.queue_output(arg_name='queueout', 
+                  queue_name='node-updated',
+                  connection="AzureWebJobsStorage")
+def gradeQuiz(queuein: func.QueueMessage, queueout: func.Out[str], context) -> None:
+    req_json = json.loads(queuein.get_body().decode("utf-8"))
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+    
+    postgreSQL_pool = pool.SimpleConnectionPool(1, int(os.getenv("PYTHON_THREADPOOL_THREAD_COUNT")), os.getenv("POSTGRES_CONN_STRING"))  
+    conn = postgreSQL_pool.getconn()
+    cursor = conn.cursor()
+
+    # get learning statuses and masteries
+    tid_callback = graph_client.submit(f"g.V('{req_json['node_id']}').values('table_id')")
+    table_id = tid_callback.all().result()[0]
+    cursor.execute("SELECT learning_status, masteries FROM nodes WHERE id=%s", (table_id,))
+    learning_status, masteries = cursor.fetchone()
+
+    score_user(req_json['node_id'], req_json['quiz_data'], req_json['attention_score'], masteries)
+
+    queueout.set(req_json['user_id'])
