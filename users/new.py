@@ -168,7 +168,14 @@ def create_new_user(req_json: dict) -> int:
         raise e
     
     # create starting graph for user in gremlin
-    snc = graph_client.submit(f"g.addV('start_node').property('user_id','{user_id}').property('status','complete').property('pk','pk')")
+    insert_sql = """
+    INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
+    VALUES (%s, %s, %s, %s, %s) RETURNING id;
+    """
+    cursor.execute(insert_sql, ("No topic; this is a root node", [], json.dumps({}), "", "You"))
+    base_id = cursor.fetchone()[0]
+    conn.commit()
+    snc = graph_client.submit(f"g.addV('start_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('status','complete').property('pk','pk')")
     snc.all().result()
 
     subjects = ["Math", "Physics", "Chemistry", "Biology", "Computer Science"]

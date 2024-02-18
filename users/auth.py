@@ -23,7 +23,7 @@ class TokenExchangeRequest(BaseModel):
 def exchange_token(request_json: dict) -> str:
     try:
         req_json = TokenExchangeRequest(**request_json)
-    except:
+    except Exception as e:
         logging.error("Could not parse token exchange request: " + str(e))
 
     token_endpoint = 'https://www.googleapis.com/oauth2/v4/token'

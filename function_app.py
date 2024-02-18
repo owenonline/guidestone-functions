@@ -8,6 +8,7 @@ from psycopg2 import pool
 import json
 from graph.api import get_graph_structure, get_node_details
 from graph.expand import expand_graph
+from graph.traverse import traverse_graph
 from users.auth import exchange_token
 from users.new import create_new_user
 
@@ -43,7 +44,7 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
         user_id = create_new_user(req.get_json())
         return func.HttpResponse(
             status_code=200,
-            body={ "user_id": user_id}
+            body=json.dumps({"user_id": user_id})
         )
     except Exception as e:
         logging.exception(e)
@@ -98,23 +99,22 @@ def expandGraph(req: func.HttpRequest) -> func.HttpResponse:
         status_code=200
     )
 
-# @app.function_name("traverseGraph")
-# @app.queue_trigger(arg_name='queuein', 
-#                   queue_name='node-updated',
-#                   connection="AzureWebJobsStorage")
-# @app.queue_output(arg_name='queueout', 
-#                   queue_name='actions',
-#                   connection="AzureWebJobsStorage")
-# def traverseGraph(queuein: func.QueueMessage, queueout: func.Out[typing.List[str]], context) -> None:
-    
-    
-#     try:
-#         node_id = queuein.get_json()
-#     except ValueError as e:
-#         logging.error(f"Queue message is not valid: {queuein.get_body().decode('utf-8')}")
-#         return
-    
-    # get the records in the learning style database
+@app.function_name("traverseGraph")
+@app.queue_trigger(arg_name='queuein', 
+                  queue_name='node-updated',
+                  connection="AzureWebJobsStorage")
+@app.queue_output(arg_name='queueout', 
+                  queue_name='actions',
+                  connection="AzureWebJobsStorage")
+def traverseGraph(queuein: func.QueueMessage, queueout: func.Out[typing.List[str]], context) -> None:
+    node_ids = traverse_graph()
+
+    messages = []
+    for node_id in node_ids:
+        messages.append(json.dumps({
+            "node_id": node_id
+        }))
+    queueout.set(messages)
     
 # @app.function_name("createLesson")
 # @app.queue_trigger(arg_name='queuemessage', 
