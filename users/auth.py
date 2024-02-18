@@ -24,17 +24,16 @@ def exchange_token(request_json: dict) -> str:
     try:
         req_json = TokenExchangeRequest(**request_json)
     except Exception as e:
-        logging.error("Could not parse token exchange request: " + str(e))
+        print("Could not parse token exchange request: " + str(e))
 
     token_endpoint = 'https://www.googleapis.com/oauth2/v4/token'
     payload = {
         'code': req_json.code,
-        'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-        'client_secret': os.getenv("GOOGLE_CLIENT_SECRET"),
+        'client_id': "40779836065-i0qkcrhh0v2jpblloghv6endo1u50g8e.apps.googleusercontent.com",
+        'client_secret': "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",
         'redirect_uri': req_json.redirect_uri,
         'grant_type': 'authorization_code',
     }
 
-    response = requests.post(token_endpoint, data=payload)
-    response.raise_for_status()
-    return response['access_token']
+    response = requests.post(token_endpoint, data=payload).json()
+    return response
