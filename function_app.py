@@ -9,7 +9,7 @@ import json
 from graph.api import get_graph_structure, get_node_details
 from graph.expand import expand_graph
 from graph.traverse import traverse_graph
-from lesson.create import LessonCreateRequest#create_lesson
+from lesson.create import create_lesson
 from users.auth import exchange_token
 from users.new import create_new_user
 
