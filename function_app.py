@@ -111,10 +111,10 @@ def expandGraph(req: func.HttpRequest, queue: func.Out[str]) -> func.HttpRespons
 def traverseGraph(queuein: func.QueueMessage, context) -> None:
     traverse_graph(queuein.get_body().decode("utf-8"))
     
-@app.function_name("createLesson")
-@app.queue_trigger(arg_name='queuemessage', 
-                  queue_name='lesson-regenerate',
-                  connection="AzureWebJobsStorage")
-def createLesson(queuemessage: func.QueueMessage, context) -> None:
-    create_lesson(queuemessage.get_json())
+# @app.function_name("createLesson")
+# @app.queue_trigger(arg_name='queuemessage', 
+#                   queue_name='lesson-regenerate',
+#                   connection="AzureWebJobsStorage")
+# def createLesson(queuemessage: func.QueueMessage, context) -> None:
+#     create_lesson(queuemessage.get_json())
 
