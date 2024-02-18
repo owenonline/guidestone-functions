@@ -16,3 +16,4 @@ psycopg2-binary==2.9.9
 pydantic==1.10.2
 Requests==2.29.0
 aiohttp==3.8.3
+ansi2html==1.9.1

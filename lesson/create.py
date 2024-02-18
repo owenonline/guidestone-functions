@@ -11,8 +11,8 @@ from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from operator import itemgetter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-# from lesson.video import VideoGeneratorAgent
-# from lesson.audio import create_audio
+from lesson.video import VideoGeneratorAgent
+from lesson.audio import create_audio
 import re
 import json
 import uuid
