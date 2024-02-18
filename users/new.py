@@ -63,21 +63,21 @@ STARTING_KNOWLEDGE = {
         "Biology": "Cells, the scientific method, human health.",
         "Physics": "Light and optics, force and motion in more depth.",
         "Chemistry": "Mixtures and solutions in depth, introduction to the periodic table.",
-        "Computer Science": "Safe online communication, basic website creation."
+        "Computer Science": "Safe online communication"
     },
     GradeLevel.SIXTH_GRADE: {
         "Math": "Ratios, negative numbers, basic algebraic concepts.",
         "Biology": "Classification of living things, basic genetics.",
         "Physics": "Energy transfer, simple engineering principles.",
         "Chemistry": "Chemical reactions, introduction to atomic structure.",
-        "Computer Science": "Intermediate coding, digital literacy and research skills."
+        "Computer Science": "drag-and-drop coding, digital literacy and research skills."
     },
     GradeLevel.SEVENTH_GRADE: {
         "Math": "Proportional relationships, probability, more complex algebra.",
         "Biology": "Human body systems in detail, ecosystems.",
         "Physics": "Thermal energy, laws of motion.",
         "Chemistry": "Chemical equations, the mole concept.",
-        "Computer Science": "Software use and installation, beginning of algorithm understanding."
+        "Computer Science": "Software use and installation"
     },
     GradeLevel.EIGHTH_GRADE: {
         "Math": "Linear equations, functions, introduction to geometry.",
@@ -95,21 +95,21 @@ STARTING_KNOWLEDGE = {
     },
     GradeLevel.TENTH_GRADE: {
         "Math": "Geometry - Theorems and proofs, circle geometry, transformations.",
-        "Biology": "Cell biology, molecular genetics, ecology.",
+        "Biology": "Cell biology, genetics, ecology.",
         "Physics": "Electricity and magnetism, mechanical waves.",
         "Chemistry": "Acid-base chemistry, thermodynamics.",
         "Computer Science": "Object-oriented programming, data structures."
     },
     GradeLevel.ELEVENTH_GRADE: {
         "Math": "Algebra II - Polynomial functions, logarithms, sequences and series.",
-        "Biology": "Anatomy and physiology, evolution, plant biology.",
+        "Biology": "evolution, plant biology.",
         "Physics": "Fluid mechanics, thermal physics, nuclear physics.",
-        "Chemistry": "Organic chemistry, kinetics, equilibrium.",
+        "Chemistry": "kinetics, equilibrium.",
         "Computer Science": "Software development principles, databases."
     },
     GradeLevel.TWELFTH_GRADE: {
         "Math": "Pre-Calculus - Trigonometry, complex numbers, limits.",
-        "Biology": "Advanced genetics, biotechnology, ecosystems.",
+        "Biology": "Advanced genetics, ecosystems.",
         "Physics": "physics 1 without calc, electromagnetism",
         "Chemistry": "Electrochemistry, photochemistry, materials science.",
         "Computer Science": "Advanced programming concepts, network security."

@@ -55,12 +55,13 @@ def expand_graph(req_json: dict) -> None:
     dependency_extraction_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an agent that determines the immediate prerequisite knowledge of a topic. Return your answer in the following format: {format_instructions}"),
-            ("user", "{current_topic}"),
+            ("user", "{current_topic}, which unlocks {parent_topics}"),
         ]
     )
     dependency_extraction_chain = (
         {
             "format_instructions": itemgetter("format_instructions"),
+            "parent_topics": itemgetter("parent_topics"),
             "current_topic": itemgetter("current_topic"),
         }
         | dependency_extraction_prompt
@@ -78,19 +79,31 @@ def expand_graph(req_json: dict) -> None:
     )
 
     # get the leaf topics currently representing the frontier of the graph
-    leaf_callback = graph_client.submit(f"g.V().has('user_id', '{graph_expand_body.user_id}').not(__.outE()).project('id', 'topic').by('id').by('topic').fold()")
-    leaf_result = leaf_callback.all().result()[0]
-    leaf_topics: dict[str, LeafTopic] = {lr['topic']:LeafTopic(id=lr['id'], topic=lr['topic']) for lr in leaf_result}
+    leaf_callback = graph_client.submit(f"g.V().has('user_id', '{graph_expand_body.user_id}').not(__.outE()).values('id', 'table_id')")
+    leaf_result = leaf_callback.all().result()
 
-    def expand_graph_recursive(topic, available_leaf_topics, depth=0):
+    logging.info(leaf_result)
+
+    leaf_topics: dict[str, LeafTopic] = {}
+    for node_id, table_id in zip(leaf_result[::2], leaf_result[1::2]):
+        logging.info(f"Found leaf node {node_id} with table id {table_id}")
+        cursor.execute("SELECT topic FROM nodes WHERE id = %s", (table_id,))
+        topic, = cursor.fetchone()
+        leaf_topics[topic] = LeafTopic(id=node_id, topic=topic)
+
+    logging.info(f"Leaf nodes at the start of process: {leaf_topics}")
+
+    def expand_graph_recursive(topic, available_leaf_topics, parent_topics, depth=0):
         current_connections: list[LeafTopic] = []
 
         if depth > 10:
             raise ValueError("Recursion depth exceeded")
 
         # get prerequisites of current topic
+        logging.info(f"parent topic: {parent_topics}")
         topic_dependencies: TopicDependencies = dependency_extraction_chain.invoke({
             "format_instructions": dpe_fixing_parser.get_format_instructions(),
+            "parent_topics": parent_topics,
             "current_topic": topic
         })
         topic_dependencies = topic_dependencies.dependencies
@@ -127,10 +140,14 @@ def expand_graph(req_json: dict) -> None:
             # if the model determines that one of the existing leaf nodes accounts for this topic, mark it
             # as a prerequisite for the current topic 
             if dependency_cover.chosen_leaf.value != "NONE":
+                logging.info(depth*"\t" + f"Connection found for dependency {dependency}: {dependency_cover.chosen_leaf.value}")
                 current_connections.append(available_leaf_topics[dependency_cover.chosen_leaf.value])
             # otherwise, recurse on this topic to generate a new leaf node
             else:
-                new_leaf, available_leaf_topics = expand_graph_recursive(dependency, available_leaf_topics, depth=depth+1)
+                logging.info(depth*"\t" + f"No connection found for dependency {dependency}: recurring")
+                expanded_parents = parent_topics + [dependency]
+                logging.info(depth*"\t" + f"expanded parents: {expanded_parents}")
+                new_leaf, available_leaf_topics = expand_graph_recursive(dependency, available_leaf_topics, expanded_parents, depth=depth+1)
                 available_leaf_topics = {**available_leaf_topics, dependency:new_leaf}
                 current_connections.append(new_leaf)
 
@@ -143,7 +160,7 @@ def expand_graph(req_json: dict) -> None:
         masteries_fixing_parser = OutputFixingParser.from_llm(parser=masteries_parser, llm=gpt_4_llm)
         masteries_creation_prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", "You are an agent that makes lesson plans, and your job is to take a topic and produce a list of sub-topics for it. Return your answer in the following format: {format_instructions}")
+                ("system", "You are an agent that makes lesson plans, and your job is to take a topic and produce a list of sub-topics for it. Return your answer in the following format: {format_instructions}"),
                 ("user", "Here is the topic I want you to make sub-topics for: {topic}")
             ]
         )
@@ -183,4 +200,4 @@ def expand_graph(req_json: dict) -> None:
 
         return new_node, available_leaf_topics
 
-    expand_graph_recursive(graph_expand_body.topic, leaf_topics)
+    expand_graph_recursive(graph_expand_body.topic, leaf_topics, [graph_expand_body.topic])
