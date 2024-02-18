@@ -34,10 +34,7 @@ def exchange_token(request_json: dict) -> str:
         'redirect_uri': req_json.redirect_uri,
         'grant_type': 'authorization_code',
     }
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-    }
 
-    response = requests.post(token_endpoint, data=payload, headers=headers)
+    response = requests.post(token_endpoint, data=payload)
     response.raise_for_status()
     return response['access_token']
