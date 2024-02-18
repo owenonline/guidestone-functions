@@ -20,7 +20,7 @@ class TokenExchangeRequest(BaseModel):
     code: str
     redirect_uri: str
 
-def exchange_token(request_json: dict) -> str:
+def exchange_token(request_json: dict) -> dict[str, any]:
     try:
         req_json = TokenExchangeRequest(**request_json)
     except Exception as e:

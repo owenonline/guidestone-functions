@@ -9,6 +9,7 @@ import json
 from graph.api import get_graph_structure, get_node_details
 from graph.expand import expand_graph
 from graph.traverse import traverse_graph
+from lesson.create import create_lesson
 from users.auth import exchange_token
 from users.new import create_new_user
 
@@ -59,9 +60,7 @@ def createUser(req: func.HttpRequest) -> func.HttpResponse:
 def exchangeToken(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(
         status_code=200,
-        body={
-            "access_token": exchange_token(req.get_json())
-        }
+        body=json.dumps(exchange_token(req.get_json()))
     )
 
 @app.function_name("getGraphStructure")
@@ -99,7 +98,7 @@ def expandGraph(req: func.HttpRequest, queue: func.Out[str]) -> func.HttpRespons
     req_json: dict = req.get_json()
     expand_graph(req_json)
 
-    # queue.set(req_json['user_id'])
+    queue.set(req_json['user_id'])
     
     return func.HttpResponse(
         status_code=200
@@ -117,6 +116,5 @@ def traverseGraph(queuein: func.QueueMessage, context) -> None:
                   queue_name='lesson-regenerate',
                   connection="AzureWebJobsStorage")
 def createLesson(queuemessage: func.QueueMessage, context) -> None:
-    qmj = queuemessage.get_json()
-    logging.info(f"Received queue message to generate lesson for: {qmj['node_id']}")
+    create_lesson(queuemessage.get_json())
 
