@@ -74,7 +74,7 @@ def expand_graph(req_json: dict) -> None:
     dependency_cover_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", "You are an agent that determines whether or not any of the user's already understood topics imply understanding the topic the user specifies below. Return your answer in the following format: {format_instructions}"),
-            ("user", "I currently understand these topics: \n{currently_understood_topics}\nHere is the topic I'm specifying: {current_topic}"),
+            ("user", "I currently understand these topics and everything that comes before them: \n{currently_understood_topics}\nHere is the topic I'm specifying: {current_topic}"),
         ]
     )
 
@@ -107,6 +107,8 @@ def expand_graph(req_json: dict) -> None:
             "current_topic": topic
         })
         topic_dependencies = topic_dependencies.dependencies
+
+        actual_dependencies = list(set(topic_dependencies)-set(parent_topics))
 
         logging.info(depth*"\t" + f"Expanding {topic} with dependencies {topic_dependencies}")
 

@@ -20,108 +20,143 @@ class GradeLevel(Enum):
     TENTH_GRADE = "10"
     ELEVENTH_GRADE = "11"
     TWELFTH_GRADE = "12"
-    COLLEGE = "College"
+    FRESHMAN = "F"
+    SOPHOMORE = "S"
+    JUNIOR = "J"
+    SENIOR = "SR"
 
 STARTING_KNOWLEDGE = {
     GradeLevel.KINDERGARTEN: {
-        "Math": "Basic counting, shapes, and simple addition and subtraction.",
-        "Biology": "Basic body parts, plant and animal identification.",
-        "Physics": "Understanding of everyday physical concepts like motion and gravity.",
-        "Chemistry": "Familiarity with water, states of matter (solid, liquid, gas).",
-        "Computer Science": "Basic computer and tablet usage."
+        "Math": "Counting to 100, basic shapes, simple addition and subtraction.",
+        "Biology": "Identifying basic body parts and familiar plants and animals.",
+        "Physics": "Exploring motion, pushing and pulling.",
+        "Chemistry": "Introduction to states of matter: solid, liquid, gas.",
+        "Computer Science": "Understanding how to use a computer or tablet."
     },
     GradeLevel.FIRST_GRADE: {
-        "Math": "Numbers up to 100, more complex addition and subtraction.",
-        "Biology": "Basic human needs, plant life cycles.",
-        "Physics": "Simple machines, introduction to light and sound.",
-        "Chemistry": "Mixtures vs. solutions, introduction to chemical reactions.",
-        "Computer Science": "Typing skills, basic internet navigation."
+        "Math": "Understanding numbers up to 120, exploring more complex addition and subtraction, basic geometry.",
+        "Biology": "Learning about human needs, exploring plant parts and functions.",
+        "Physics": "Discovering how light and sound work, exploring simple machines.",
+        "Chemistry": "Differentiating between mixtures and solutions.",
+        "Computer Science": "Practicing typing, beginning to navigate the internet."
     },
     GradeLevel.SECOND_GRADE: {
-        "Math": "Place value, time, money, introduction to multiplication.",
-        "Biology": "Animal habitats, human body systems.",
-        "Physics": "Forces and motion, energy forms.",
-        "Chemistry": "Properties of materials, changes in matter.",
-        "Computer Science": "Creating and editing documents, basic coding concepts."
+        "Math": "Introducing place value, time, and money, starting multiplication concepts.",
+        "Biology": "Studying habitats and food chains, exploring human body basics.",
+        "Physics": "Understanding forces and motion, exploring the concept of energy.",
+        "Chemistry": "Exploring how materials can change state.",
+        "Computer Science": "Using software to create documents, introducing simple coding."
     },
     GradeLevel.THIRD_GRADE: {
-        "Math": "Multiplication and division, fractions, measurement.",
-        "Biology": "Plant and animal adaptations, ecosystems.",
-        "Physics": "Heat and temperature, magnetism.",
-        "Chemistry": "Acids and bases, conservation of mass.",
-        "Computer Science": "More advanced coding (block-based), internet safety."
+        "Math": "Mastering multiplication and division, understanding fractions, measuring objects.",
+        "Biology": "Exploring how plants and animals adapt, learning about ecosystems.",
+        "Physics": "Studying heat, light, and sound, exploring magnetism.",
+        "Chemistry": "Introduction to chemical reactions and conservation of mass.",
+        "Computer Science": "Developing coding skills with block-based programming, learning about internet safety."
     },
     GradeLevel.FOURTH_GRADE: {
-        "Math": "Multi-digit operations, expanded fractions, decimals.",
-        "Biology": "Food chains, human organ systems.",
-        "Physics": "Electricity and circuits, waves.",
-        "Chemistry": "Elements and compounds, physical vs chemical changes.",
-        "Computer Science": "Basic website navigation, introduction to digital projects."
+        "Math": "Solving problems with multi-digit numbers, expanding knowledge of fractions and decimals.",
+        "Biology": "Understanding food webs, studying human body systems.",
+        "Physics": "Exploring electricity, circuits, and waves.",
+        "Chemistry": "Learning about elements, compounds, and chemical changes.",
+        "Computer Science": "Navigating websites, starting digital projects."
     },
     GradeLevel.FIFTH_GRADE: {
-        "Math": "Adding and subtracting fractions, volume, basic geometry.",
-        "Biology": "Cells, the scientific method, human health.",
-        "Physics": "Light and optics, force and motion in more depth.",
-        "Chemistry": "Mixtures and solutions in depth, introduction to the periodic table.",
-        "Computer Science": "Safe online communication"
+        "Math": "Adding and subtracting fractions, understanding volume and basic geometry.",
+        "Biology": "Studying cells and human health, using the scientific method.",
+        "Physics": "Deepening knowledge of forces and motion, exploring light and optics.",
+        "Chemistry": "Exploring mixtures, solutions, and the periodic table.",
+        "Computer Science": "Practicing safe online communication."
     },
     GradeLevel.SIXTH_GRADE: {
-        "Math": "Ratios, negative numbers, basic algebraic concepts.",
-        "Biology": "Classification of living things, basic genetics.",
-        "Physics": "Energy transfer, simple engineering principles.",
-        "Chemistry": "Chemical reactions, introduction to atomic structure.",
-        "Computer Science": "drag-and-drop coding, digital literacy and research skills."
+        "Math": "Exploring ratios and negative numbers, beginning algebra.",
+        "Biology": "Classifying organisms, introducing genetics.",
+        "Physics": "Studying energy transfer, simple engineering concepts.",
+        "Chemistry": "Understanding chemical reactions and atomic structure.",
+        "Computer Science": "Learning drag-and-drop coding, enhancing digital literacy."
     },
     GradeLevel.SEVENTH_GRADE: {
-        "Math": "Proportional relationships, probability, more complex algebra.",
-        "Biology": "Human body systems in detail, ecosystems.",
-        "Physics": "Thermal energy, laws of motion.",
-        "Chemistry": "Chemical equations, the mole concept.",
-        "Computer Science": "Software use and installation"
+        "Math": "Studying proportional relationships, probability, and algebra.",
+        "Biology": "Exploring human anatomy in detail, studying ecosystems.",
+        "Physics": "Learning about thermal energy and motion.",
+        "Chemistry": "Balancing chemical equations, introducing moles.",
+        "Computer Science": "Understanding software use and installation."
     },
     GradeLevel.EIGHTH_GRADE: {
-        "Math": "Linear equations, functions, introduction to geometry.",
-        "Biology": "Evolution, cellular respiration and photosynthesis.",
-        "Physics": "Waves and electromagnetic spectrum, Newton's laws.",
-        "Chemistry": "Atomic theory, periodic trends.",
-        "Computer Science": "Project-based coding, cybersecurity basics."
+        "Math": "Studying linear equations, functions, and beginning geometry.",
+        "Biology": "Exploring evolution, photosynthesis, and cellular respiration.",
+        "Physics": "Learning about waves, electromagnetism, and Newton's laws.",
+        "Chemistry": "Studying atomic theory and periodic trends.",
+        "Computer Science": "Engaging in project-based coding, learning cybersecurity fundamentals."
     },
     GradeLevel.NINTH_GRADE: {
-        "Math": "Algebra I - Linear and quadratic equations, functions.",
-        "Biology": "Genetics, biomes, structure and function of living organisms.",
-        "Physics": "Motion and forces, energy forms and conversions.",
-        "Chemistry": "Stoichiometry, chemical bonding, states of matter.",
+        "Math": "Diving into Algebra I, focusing on linear and quadratic equations.",
+        "Biology": "Studying genetics, biomes, and organism structures.",
+        "Physics": "Exploring motion, forces, and energy conversions.",
+        "Chemistry": "Learning about stoichiometry, chemical bonds, and matter states.",
         "Computer Science": "Introduction to high-level programming languages."
     },
     GradeLevel.TENTH_GRADE: {
-        "Math": "Geometry - Theorems and proofs, circle geometry, transformations.",
-        "Biology": "Cell biology, genetics, ecology.",
-        "Physics": "Electricity and magnetism, mechanical waves.",
-        "Chemistry": "Acid-base chemistry, thermodynamics.",
-        "Computer Science": "Object-oriented programming, data structures."
+        "Math": "Engaging with Geometry, including theorems, circle geometry, and transformations.",
+        "Biology": "Advancing in cell biology, genetics, and ecology.",
+        "Physics": "Exploring electricity, magnetism, and mechanical waves.",
+        "Chemistry": "Studying acid-base chemistry, thermodynamics.",
+        "Computer Science": "Learning object-oriented programming and data structures."
     },
     GradeLevel.ELEVENTH_GRADE: {
-        "Math": "Algebra II - Polynomial functions, logarithms, sequences and series.",
-        "Biology": "evolution, plant biology.",
-        "Physics": "Fluid mechanics, thermal physics, nuclear physics.",
-        "Chemistry": "kinetics, equilibrium.",
-        "Computer Science": "Software development principles, databases."
+        "Math": "Delving into Algebra II with polynomial functions, logarithms, and sequences.",
+        "Biology": "Exploring evolution and plant biology in depth.",
+        "Physics": "Studying fluid mechanics, thermal physics, and nuclear concepts.",
+        "Chemistry": "Exploring kinetics and chemical equilibrium.",
+        "Computer Science": "Studying software development and databases."
     },
     GradeLevel.TWELFTH_GRADE: {
-        "Math": "Pre-Calculus - Trigonometry, complex numbers, limits.",
-        "Biology": "Advanced genetics, ecosystems.",
-        "Physics": "physics 1 without calc, electromagnetism",
-        "Chemistry": "Electrochemistry, photochemistry, materials science.",
-        "Computer Science": "Advanced programming concepts, network security."
+        "Math": "Mastering Pre-Calculus, including trigonometry, complex numbers, and limits.",
+        "Biology": "Focusing on advanced genetics and ecosystem studies.",
+        "Physics": "Exploring advanced topics like electromagnetism without calculus.",
+        "Chemistry": "Learning about electrochemistry, photochemistry, and materials science.",
+        "Computer Science": "Advancing in programming, network security."
     },
-    GradeLevel.COLLEGE: {
-        "Math": "Calculus, linear algebra, differential equations.",
-        "Biology": "Advanced cellular biology, systems biology, evolutionary biology.",
-        "Physics": "Advanced topics in mechanics, electromagnetism, and thermodynamics.",
-        "Chemistry": "Advanced organic and inorganic chemistry, analytical methods.",
-        "Computer Science": "Complex algorithm design, machine learning, systems programming."
+    GradeLevel.FRESHMAN: {
+        "Math": "Calculus I - Limits, derivatives, integrals, and their applications.",
+        "Biology": "General Biology I - Cell structure, genetics, and basic metabolism.",
+        "Physics": "General Physics I - Mechanics, including motion, forces, and energy.",
+        "Chemistry": "General Chemistry I - Atomic structure, periodic table, stoichiometry, and chemical reactions.",
+        "Computer Science": "Introduction to Programming - Basic syntax, control structures, data types, and simple data structures in a high-level programming language."
+    },
+    GradeLevel.SOPHOMORE: {
+        "Math": "Calculus II - Sequences, series, polar coordinates, and parametric equations.",
+        "Biology": "General Biology II - Evolution, ecology, plant and animal physiology.",
+        "Physics": "General Physics II - Electricity, magnetism, and thermodynamics.",
+        "Chemistry": "Organic Chemistry I - Structure, nomenclature, reactions, and mechanisms of organic molecules.",
+        "Computer Science": "Data Structures and Algorithms - Introduction to complexity analysis, basic data structures (arrays, linked lists, stacks, queues, trees, graphs), and algorithmic strategies."
+    },
+    GradeLevel.JUNIOR:  {
+        "Math": "Linear Algebra - Vector spaces, linear mappings, matrices, determinants, and eigenvalues and eigenvectors.",
+        "Biology": "Cell Biology - In-depth study of cell structure and function, signaling pathways, and cell cycle.",
+        "Physics": "Modern Physics - Introduction to quantum mechanics, atomic and nuclear physics, and special relativity.",
+        "Chemistry": "Physical Chemistry - Thermodynamics, kinetics, quantum chemistry, and spectroscopy.",
+        "Computer Science": "Software Engineering - Software development lifecycle, version control, testing, debugging, and basic software design patterns."
+    },
+    GradeLevel.SENIOR: {
+        "Math": "Differential Equations - Ordinary differential equations, systems of ODEs, and an introduction to partial differential equations.",
+        "Biology": "Genetics and Molecular Biology - Genetic information flow, gene expression, and genetic engineering techniques.",
+        "Physics": "Advanced Physics Elective - Depending on the student's interest, a course in advanced mechanics, electromagnetism, computational physics, or another area of physics.",
+        "Chemistry": "Inorganic Chemistry - Study of inorganic compounds, coordination chemistry, and organometallics.",
+        "Computer Science": "Computer Networks and Security - Basics of network protocols, network architecture, data security, encryption, and cybersecurity fundamentals."
     }
 }
+
+def get_starting_knowledge(grade_level: GradeLevel, topic) -> dict[str, str]:
+    # for every grade level below or equal to current grade level
+    # get the starting knowledge for the topic
+
+    starting_knowledge = []
+    for gl in GradeLevel:
+        if gl.value <= grade_level.value:
+            starting_knowledge.append(STARTING_KNOWLEDGE[gl][topic])
+
+    return " and ".join(starting_knowledge)
 
 class UserCreateRequest(BaseModel):
     name: str = Field(description="The name of the user")
@@ -185,7 +220,7 @@ def create_new_user(req_json: dict) -> int:
         INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
         VALUES (%s, %s, %s, %s, %s) RETURNING id;
         """
-        cursor.execute(insert_sql, (STARTING_KNOWLEDGE[create_user_body.grade_level][subject], [], json.dumps({}), "", subject))
+        cursor.execute(insert_sql, (get_starting_knowledge(create_user_body.grade_level, subject), [], json.dumps({}), "", subject))
         base_id = cursor.fetchone()[0]
         conn.commit()
 

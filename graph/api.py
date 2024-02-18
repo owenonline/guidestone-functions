@@ -99,7 +99,7 @@ def get_node_details(req_json: dict) -> dict[str, any]:
         video_url = blob_client.url
 
     if not quiz is None:
-        quiz = {question: (quiz[question]['options'], quiz[question]['answer']) for question in quiz.keys()}
+        quiz = {question: (quiz[question]['choices'], quiz[question]['correct_index']) for question in quiz.keys()}
 
     if masteries == {}:
         masteries = None
