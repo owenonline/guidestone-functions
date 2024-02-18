@@ -1,9 +1,10 @@
-
-from pydantic import BaseModel, Field, ValidationError, root_validator, validator
+from gremlin_python.driver import client, serializer
+import os
+import logging
+from psycopg2 import pool
+from pydantic import BaseModel, Field
 from enum import Enum
-import re
-
-## helper functions and classes for user creation ##
+import json
 
 class GradeLevel(Enum):
     KINDERGARTEN = "K"
@@ -129,29 +130,64 @@ class UserCreateRequest(BaseModel):
     grade_level: GradeLevel = Field(description="The grade level of the user")
     interests: list[str] = Field(description="The interests of the user")
 
-## helper class for token exchange ##
-class TokenExchangeRequest(BaseModel):
-    code: str
-    redirect_uri: str
+def create_new_user(req_json: dict) -> None:
+    graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
+                    username=f"/dbs/guidestone/colls/knowledge-graph", 
+                    password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
+                    message_serializer=serializer.GraphSONSerializersV2d0())
+    
+    postgreSQL_pool = pool.SimpleConnectionPool(1, int(os.getenv("PYTHON_THREADPOOL_THREAD_COUNT")), os.getenv("POSTGRES_CONN_STRING"))  
+    conn = postgreSQL_pool.getconn()
+    cursor = conn.cursor()
 
-## helper functions and classes for graph expansion ##
+    try:
+        create_user_body = UserCreateRequest(**req_json)
+    except Exception as e:
+        logging.error("Could not parse user creation request: " + str(e))
 
-# makes text safe for insertion into gremlin graph
-def clean_text(text: str) -> str:
-    if text is None:
-        return None
-    return re.sub(r'\\\n *\\', '', text).replace("'", "").replace('"', '').replace("/","").replace(" ","_").strip().lower()
+    # add user to postgres
+    try:
+        name = create_user_body.name
+        email = create_user_body.email
+        profile_pic_url = create_user_body.profile_pic_url
+        grade_level = create_user_body.grade_level.value
+        interests = create_user_body.interests
 
-class GraphExpandRequest(BaseModel):
-    topic: str = Field(description="The topic to expand the graph on")
+        insert_sql = """
+        INSERT INTO userData (name, email, profile_picture_url, grade_level, interests)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id;
+        """
+        cursor.execute(insert_sql, (name, email, profile_pic_url, grade_level, interests))
+        user_id = cursor.fetchone()[0]
+        conn.commit()
 
-class LeafTopic(BaseModel):
-    id: str = Field(description="the id of the node in the graph")
-    topic: str = Field(description="the natural language and very brief description of what the topic is")
+    except Exception as e:
+        conn.rollback()
+        postgreSQL_pool.putconn(conn)
+        postgreSQL_pool.closeall()
+        raise e
+    
+    # create starting graph for user in gremlin
+    snc = graph_client.submit(f"g.addV('start_node').property('user_id','{user_id}').property('status','complete').property('pk','pk')")
+    snc.all().result()
 
-class TopicDependencies(BaseModel):
-    dependencies: list[str] = Field(description="Topics that the user must already understand to understand the current topic. For example, to understand the topic 'fractions', the user must already understand the topic 'division'. Generate a full list of all of the topics IMMEDIATELY PRECEDING the current topic. For example, if the current topic is 'derivatives' you should include 'limits' in this list but NOT 'multiplication' since it is not a direct prerequisite for understanding derivatives.")
+    subjects = ["Math", "Physics", "Chemistry", "Biology", "Computer Science"]
 
-## helper functions and classes for creating lessons ##
-class LessonCreateRequest(BaseModel):
-    node_id: str = Field(description="The id of the node in the graph that needs a new lesson")
+    for subject in subjects:
+        insert_sql = """
+        INSERT INTO Nodes (topic, learning_status, masteries, blurb, public_name)
+        VALUES (%s, %s, %s, %s, %s) RETURNING id;
+        """
+        cursor.execute(insert_sql, (STARTING_KNOWLEDGE[create_user_body.grade_level][subject], [], json.dumps({}), "", subject))
+        base_id = cursor.fetchone()[0]
+        conn.commit()
+
+        subject_l = subject.lower()
+        sc = graph_client.submit(f"g.addV('{subject_l}_base_node').property('user_id','{user_id}').property('table_id','{base_id}').property('lesson_id','-1').property('status','complete').property('pk','pk')")
+        sc.all().result()
+
+        cc = graph_client.submit(f"g.V().hasLabel('start_node').has('user_id', '{user_id}').addE('base').to(g.V().hasLabel('{subject_l}_base_node').has('user_id', '{user_id}'))")
+        cc.all().result()
+
+    postgreSQL_pool.putconn(conn)
+    postgreSQL_pool.closeall()
