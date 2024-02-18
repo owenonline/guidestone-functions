@@ -5,22 +5,17 @@ import os
 import logging
 from psycopg2 import pool
 from pydantic import BaseModel, Field
-from enum import Enum
 from langchain_openai import AzureChatOpenAI
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+from azure.storage.blob import BlobServiceClient
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import ChatPromptTemplate
 from operator import itemgetter
-from gremlin_python.process.anonymous_traversal import traversal
-from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-from langchain.schema import StrOutputParser
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from lesson.video import VideoGeneratorAgent
 from lesson.audio import create_audio
 import re
 import json
 import uuid
-
 
 class LessonCreateRequest(BaseModel):
     node_id: str = Field(description="The id of the node in the graph that needs a new lesson")

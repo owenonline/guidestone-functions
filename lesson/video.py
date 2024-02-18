@@ -2,19 +2,12 @@ import ast
 import logging
 import operator
 from typing import Annotated, Dict, List, Optional, Sequence, Type, TypedDict
-import azure.functions as func
-from psycopg2 import pool
-from pydantic import BaseModel, Field, ValidationError, root_validator, validator, ConfigDict
-from enum import Enum
+from pydantic import BaseModel, Field, root_validator, ConfigDict
 from langchain_openai import AzureChatOpenAI
-from langchain_core.runnables import RunnableLambda
-from langchain_core.messages import BaseMessage, ToolMessage, HumanMessage
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+from langchain_core.messages import BaseMessage, ToolMessage
 from langchain.tools.render import format_tool_to_openai_tool
-from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
 from langchain.tools import BaseTool
 import shutil
 from langchain.callbacks.manager import (
@@ -27,7 +20,6 @@ import json
 import os
 import subprocess
 from ansi2html import Ansi2HTMLConverter
-from langchain.agents import AgentExecutor
 
 from langchain.callbacks.manager import (
     AsyncCallbackManagerForToolRun,
@@ -35,11 +27,11 @@ from langchain.callbacks.manager import (
 )
 from langgraph.prebuilt import ToolExecutor, ToolInvocation
 from langgraph.graph import StateGraph, END
-from langgraph.pregel import Pregel
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
+from azure.storage.blob import BlobServiceClient
 from langchain.load.dump import dumps
 from langchain.load.load import loads
 import random
+
 class CodeGenerateSchema(BaseModel):
     manim_code: str = Field(description="Manim code that generates the visuals for the scene. Treat this field as the equivalent to a .py file; it must be NOTHING BUT Python code and be able to be executed with manim -pql scene.py <class_name> AS-IS.")
     class_name: str = Field(description="The Manim scene class to use when running the manim -pql scene.py <class_name> command to render the video")

@@ -1,55 +1,11 @@
-import ast
-import operator
-from typing import Annotated, Dict, List, Optional, Sequence, Type, TypedDict
-import azure.functions as func
-from psycopg2 import pool
 import requests
-from pydantic import BaseModel, Field, ValidationError, root_validator, validator, ConfigDict
-from enum import Enum
+from pydantic import BaseModel
 from langchain_openai import AzureChatOpenAI
-from langchain_core.runnables import RunnableLambda
-from langchain_core.messages import BaseMessage, ToolMessage, HumanMessage
-from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
-from langchain.tools.render import format_tool_to_openai_tool
-from langchain.agents.format_scratchpad.openai_tools import format_to_openai_tool_messages
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema import StrOutputParser
-from langchain.tools import BaseTool
-import shutil
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from operator import itemgetter
-import re
-import json
-import os
-import subprocess
-from ansi2html import Ansi2HTMLConverter
-from langchain.agents import AgentExecutor
-
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
-from langgraph.prebuilt import ToolExecutor, ToolInvocation
-from langgraph.graph import StateGraph, END
-from langgraph.pregel import Pregel
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
-from langchain.load.dump import dumps
-from langchain.load.load import loads
-from langchain.schema import StrOutputParser
-
 from langchain_openai import AzureChatOpenAI
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from operator import itemgetter
-from gremlin_python.process.anonymous_traversal import traversal
-from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
-from langchain.schema import StrOutputParser
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from lesson.video import VideoGeneratorAgent
 import os
 
 class Script(BaseModel):
