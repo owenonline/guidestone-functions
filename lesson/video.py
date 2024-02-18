@@ -300,11 +300,17 @@ class VideoGeneratorAgent:
         subprocess.call(["ffmpeg", "-i", audio, "-i", video, "-c:v", "copy", "-filter:a", "aresample=async=1", "-c:a", "flac", "-strict", "-2", output])
 
     def combine_videos(self, videos, final):
-        c = "|".join(videos)
+        with open("temp_video_list.txt", "w") as file:
+            for video in videos:
+                file.write(f"file '{video}'\n")
+
         subprocess.call([
             "ffmpeg",
-            "-i", f"concat:{c}",  # Specify video file paths directly, separated by '|'
-            "-c:a", "copy",
-            "-c:v", "copy",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", "temp_video_list.txt",
+            "-c", "copy",
+            "-strict", "-2",
             final
         ])
+        os.remove("temp_video_list.txt")
