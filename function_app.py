@@ -1,4 +1,5 @@
 from typing import List
+import typing
 import azure.functions as func
 from gremlin_python.driver import client, serializer
 import os
@@ -39,9 +40,16 @@ def healthcheck(req: func.HttpRequest) -> func.HttpResponse:
            methods=['POST'])
 def createUser(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        create_new_user(req.get_json())
+        user_id = create_new_user(req.get_json())
+        return func.HttpResponse(
+            status_code=200,
+            body={ "user_id": user_id}
+        )
     except Exception as e:
         logging.exception(e)
+        return func.HttpResponse(
+            status_code=500
+        )
 
 @app.function_name("exchangeToken")
 @app.route(route="exchangeToken",
@@ -90,8 +98,23 @@ def expandGraph(req: func.HttpRequest) -> func.HttpResponse:
         status_code=200
     )
 
-# class LessonCreateRequest(BaseModel):
-#     node_id: str = Field(description="The id of the node in the graph that needs a new lesson")
+# @app.function_name("traverseGraph")
+# @app.queue_trigger(arg_name='queuein', 
+#                   queue_name='node-updated',
+#                   connection="AzureWebJobsStorage")
+# @app.queue_output(arg_name='queueout', 
+#                   queue_name='actions',
+#                   connection="AzureWebJobsStorage")
+# def traverseGraph(queuein: func.QueueMessage, queueout: func.Out[typing.List[str]], context) -> None:
+    
+    
+#     try:
+#         node_id = queuein.get_json()
+#     except ValueError as e:
+#         logging.error(f"Queue message is not valid: {queuein.get_body().decode('utf-8')}")
+#         return
+    
+    # get the records in the learning style database
     
 # @app.function_name("createLesson")
 # @app.queue_trigger(arg_name='queuemessage', 

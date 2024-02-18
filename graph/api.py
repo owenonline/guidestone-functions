@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from azure.storage.blob import BlobServiceClient
 
 class GraphStructureRequest(BaseModel):
-    user_id: str
+    user_id: int
 
 class NodeDetailRequest(BaseModel):
     node_id: str
@@ -58,36 +58,49 @@ def get_node_details(req_json: dict) -> dict[str, any]:
     except Exception as e:
         logging.error("Could not parse node details request: " + str(e))
 
-    node_details_callback = graph_client.submit(f"g.V('{node_details_body.node_id}').valueMap().fold()")
+    node_details_callback = graph_client.submit(f"g.V('{node_details_body.node_id}').valueMap()")
     node_details_results = node_details_callback.all().result()[0]
 
-    if len(node_details_results) == 0:
-        logging.warning("Node not found in graph")
-        return {}
-    
-    node_details = node_details_results[0]
+    logging.info(node_details_results)
 
     # get the lesson info
-    cursor.execute(f"SELECT lesson_description, video_id, quiz FROM lessons WHERE id = '{node_details['lesson_id']}'")
-    lesson_description, video_id, quiz = cursor.fetchone()
+    if node_details_results['lesson_id'][0] != '-1':
+        cursor.execute("SELECT lesson_description, video_id, quiz FROM lessons WHERE id = %s", (node_details_results['lesson_id'][0],))
+        lesson_description, video_id, quiz = cursor.fetchone()
+    else:
+        lesson_description, video_id, quiz = None, None, None
 
     # get node info 
-    cursor.execute(f"SELECT public_name, learning_status, masteries, blurb FROM nodes WHERE id = '{node_details['table_id']}'")
+    cursor.execute("SELECT public_name, learning_status, masteries, blurb FROM nodes WHERE id = %s", (node_details_results['table_id'][0],))
     public_name, learning_status, masteries, blurb = cursor.fetchone()
 
-    blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AzureWebJobsStorage"))
-    container_client = blob_service_client.get_container_client("videos")
-    blob_client = container_client.get_blob_client(video_id)
-    video_url = blob_client.url
+    if video_id is None:
+        video_url = None
+    else:
+        blob_service_client = BlobServiceClient.from_connection_string(os.getenv("AzureWebJobsStorage"))
+        container_client = blob_service_client.get_container_client("videos")
+        blob_client = container_client.get_blob_client(video_id)
+        video_url = blob_client.url
+
+    if not quiz is None:
+        quiz = {question: (quiz[question]['options'], quiz[question]['answer']) for question in quiz.keys()}
+
+    if masteries == {}:
+        masteries = None
+
+    if learning_status == []:
+        learning_status = None
+    else:
+        learning_status = learning_status[-1]
 
     return {
         "lesson_description": lesson_description,
         "node_name": public_name,
         "video_url": video_url,
-        "quiz": {question: (quiz[question]['options'], quiz[question]['answer']) for question in quiz.keys()},
+        "quiz": quiz,
         "masteries": masteries,
         "blurb": blurb,
-        "learning_status": learning_status[-1]
+        "learning_status": learning_status
     }
 
 

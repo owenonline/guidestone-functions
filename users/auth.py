@@ -26,7 +26,7 @@ def exchange_token(request_json: dict) -> str:
     except:
         logging.error("Could not parse token exchange request: " + str(e))
 
-    token_endpoint = 'https://oauth2.googleapis.com/token'
+    token_endpoint = 'https://www.googleapis.com/oauth2/v4/token'
     payload = {
         'code': req_json.code,
         'client_id': os.getenv("GOOGLE_CLIENT_ID"),

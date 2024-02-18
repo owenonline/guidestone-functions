@@ -130,7 +130,7 @@ class UserCreateRequest(BaseModel):
     grade_level: GradeLevel = Field(description="The grade level of the user")
     interests: list[str] = Field(description="The interests of the user")
 
-def create_new_user(req_json: dict) -> None:
+def create_new_user(req_json: dict) -> int:
     graph_client = client.Client('wss://guidestone-gremlin.gremlin.cosmos.azure.com:443/','g', 
                     username=f"/dbs/guidestone/colls/knowledge-graph", 
                     password=os.getenv("KNOWLEDGE_GRAPH_KEY"),
@@ -191,3 +191,5 @@ def create_new_user(req_json: dict) -> None:
 
     postgreSQL_pool.putconn(conn)
     postgreSQL_pool.closeall()
+
+    return user_id
