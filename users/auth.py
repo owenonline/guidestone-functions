@@ -29,8 +29,8 @@ def exchange_token(request_json: dict) -> dict[str, any]:
     token_endpoint = 'https://www.googleapis.com/oauth2/v4/token'
     payload = {
         'code': req_json.code,
-        'client_id': "40779836065-i0qkcrhh0v2jpblloghv6endo1u50g8e.apps.googleusercontent.com",
-        'client_secret': "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",
+        'client_id': os.getenv("GOOGLE_CLIENT_ID"),
+        'client_secret': os.getenv("GOOGLE_CLIENT_SECRET"),
         'redirect_uri': req_json.redirect_uri,
         'grant_type': 'authorization_code',
     }
